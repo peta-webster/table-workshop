@@ -1,26 +1,12 @@
 # Table Workshop
 
-Turn AI and Markdown tables into editable tables for Word, Excel and PowerPoint. Table content stays in your browser.
+Turn AI and Markdown tables into editable tables for Word, Excel and PowerPoint. Table content stays in your local browser.
 
-[中文](README.md) · [Releases](https://github.com/peta-webster/table-workshop/releases) · [Compatibility](docs/compatibility.md)
+[中文](README.md) · [Releases](https://github.com/peta-webster/table-workshop/releases) · [Example inputs](examples/README.md) · [Compatibility notes](docs/compatibility.md)
 
-![Table Workshop](docs/screenshot.png)
+## Quick start
 
-## Workflow
-
-Paste one table, choose the target app and style, then copy or download.
-
-- **Word:** editable DOCX, academic three-line tables, clipboard tables that follow the document text width. Choose **Keep Source Formatting** after pasting.
-- **Excel:** defaults to **Data only**. No decorative fonts, fills, borders, extra title, or fixed row/column dimensions. Choose **Match Destination Formatting** when pasting into an existing sheet.
-- **PowerPoint:** native editable tables, automatic pagination and repeated headers. Download PPTX for the most predictable result.
-
-Markdown, HTML tables and simple tab-separated text are supported. Chinese text, line breaks, blanks, leading-zero identifiers and long numbers are preserved. Formula-looking input stays text. Percentages and ordinary numbers remain numeric where clearly identified.
-
-**Data only still preserves types.** In XLSX, necessary number formats preserve decimal places and percentage display. When matching destination formatting during paste, the destination controls display: a percentage value of `0.985` appears as `0.985` in a General cell and as a percentage in a percentage-formatted cell.
-
-## Run locally
-
-Install Node.js 22 or newer:
+Install [Node.js](https://nodejs.org/) 22 or newer, then run:
 
 ```sh
 git clone https://github.com/peta-webster/table-workshop.git
@@ -28,11 +14,42 @@ cd table-workshop
 npm start
 ```
 
-Open http://127.0.0.1:4173/ and keep the terminal running. Starting and building use built-in Node modules and do not require an npm install. Restart after editing source files.
+Open the `http://127.0.0.1:4173/` address printed in the terminal and keep the server running. Startup does not require an npm install. You can also download the web ZIP from [Releases](https://github.com/peta-webster/table-workshop/releases), extract it, and run `node scripts/serve.mjs`.
 
-Alternatively, download the web ZIP from Releases, extract it and run `node scripts/serve.mjs`. Opening the HTML directly through `file://` does not support module loading.
+## How to use it
 
-## Develop
+1. Paste one Markdown table, HTML table from a web page, or simple tab-separated text.
+2. Choose Word, Excel or PowerPoint and a style.
+3. Copy the table or download an editable Office file.
+
+![Table Workshop input and preview with synthetic office-supply data](docs/screenshots/overview.jpg)
+
+### Three browser previews
+
+These images were captured from the local app using synthetic examples. They show browser previews; the files may look different in Office. Click an image to see it full size.
+
+| Word · academic three-line style | Excel · data only | PowerPoint · presentation style |
+| --- | --- | --- |
+| [![Browser preview of a Word three-line table](docs/screenshots/word-preview.png)](docs/screenshots/word-preview.png) | [![Browser preview of an Excel data-only table](docs/screenshots/excel-preview.png)](docs/screenshots/excel-preview.png) | [![Browser preview of a PowerPoint presentation table](docs/screenshots/powerpoint-preview.png)](docs/screenshots/powerpoint-preview.png) |
+| [Project-status input](examples/project-status.md) | [Data-types input](examples/data-types.md) | [Project-status input](examples/project-status.md) |
+
+## Output and paste guidance
+
+| Target | What to use |
+| --- | --- |
+| Word | Download a native `.docx`, or copy and choose **Keep Source Formatting** in Word. Clipboard table widths follow the document text area. |
+| Excel | **Data only** is the default. Identifiers, leading zeros, long numbers and formula-looking input stay text; clear numbers and percentages stay numeric. Choose **Match Destination Formatting** when pasting into an existing sheet. |
+| PowerPoint | Download a native editable `.pptx`. Long tables split across slides with repeated headers; cross-app paste results depend on the Office version. |
+
+In Excel, **Match Destination Formatting** also uses the destination's number format. Download `.xlsx` when the original percentage or decimal display must be preserved.
+
+## Limits and validation
+
+- One rectangular table at a time, up to 30 columns and 10,000 data cells; PowerPoint supports up to 10 columns.
+- Merged cells, complex rich text and native equations are unsupported. Simple tab-separated input is not a full CSV or quoted-TSV importer.
+- Automated tests check input, data types, clipboard output and Office file structure. See the [compatibility notes](docs/compatibility.md) for actual Office paste and layout coverage; Windows Office and WPS still need testing.
+
+## Development and repository layout
 
 ```sh
 npm ci
@@ -41,23 +58,14 @@ npm run build
 npm run package
 ```
 
-Tests verify parsing, cell types, clipboard HTML, and the internal structures of exported DOCX/XLSX/PPTX files. These checks do not replace actual Office paste/layout testing. The compatibility document distinguishes tested workflows from pending coverage.
+| Directory | Contents |
+| --- | --- |
+| `src/` | App, parsing, Office export and pinned browser libraries |
+| `scripts/` | Local server, static build and release packaging |
+| `tests/` | Regression tests |
+| `examples/` | Copyable synthetic inputs and an example index |
+| `docs/` | Compatibility notes and browser-preview screenshots |
 
-All public examples, test input and screenshots use synthetic data.
+The static build is written to `dist/` and can be deployed to an HTTPS static host. The app has no accounts, conversion backend, AI API, analytics or runtime CDN requests; the host still receives normal page requests.
 
-Deploy `dist/` to a static HTTPS host after building. Relative asset URLs support subdirectory hosting. The app has no conversion backend, AI API, analytics or runtime CDN requests. The static hosting provider still receives normal page requests. Clipboard access depends on browser permissions; file downloads are available when copying is unavailable.
-
-## Scope
-
-- One rectangular table per input; up to 30 columns and 10,000 data cells. PPT supports up to 10 columns.
-- Merged cells and inconsistent row widths are rejected. Oversized single PPT rows require splitting.
-- Cell formatting is normalized. Links retain their text and HTTP(S) URL; images retain alt text only. Rich text and mathematical formulas are not preserved as native formatting/equations.
-- Tab-separated input supports simple one-record-per-line text, not a full quoted TSV/CSV importer.
-- The interface is currently Simplified Chinese. Documentation is available in English and Chinese.
-- macOS Office workflows have been tested. Windows Office, WPS and other browser combinations need community validation. Browser previews are not pixel-perfect Office renders.
-
-See [examples](examples), [contributing](CONTRIBUTING.md), [code of conduct](CODE_OF_CONDUCT.md), and [changelog](CHANGELOG.md). Reproducible compatibility reports are particularly welcome.
-
-## License
-
-Project code: [MIT](LICENSE). Bundled libraries retain their licenses; see [third-party notices](THIRD_PARTY_NOTICES.md).
+See the [contributing guide](CONTRIBUTING.md), [code of conduct](CODE_OF_CONDUCT.md), and [changelog](CHANGELOG.md). Project code uses the [MIT license](LICENSE); bundled libraries retain their licenses in the [third-party notices](THIRD_PARTY_NOTICES.md).

@@ -1,0 +1,20 @@
+{
+  "name": "table-workshop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local-first AI and Markdown tables for Word, Excel and PowerPoint.",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node scripts/dev.mjs",
+    "dev": "node scripts/dev.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node --test",
+    "package": "node scripts/package.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0",
+    "jszip": "3.10.1"
+  }
+}

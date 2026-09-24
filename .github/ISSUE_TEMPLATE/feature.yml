@@ -1,0 +1,14 @@
+name: Feature request / 功能建议
+description: Describe an Office table workflow you want to improve.
+body:
+  - type: textarea
+    id: task
+    attributes:
+      label: Your task / 你想完成的任务
+      description: Include a concrete example and your current workaround.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Desired result / 期望结果

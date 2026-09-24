@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>表格工坊 · AI 表格转 Office</title>
+  <meta name="description" content="粘贴 AI 或 Markdown 表格，预览排版并导出可编辑的 Word、Excel 和 PowerPoint 文件。">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232c4cf0'/%3E%3Cpath d='M7 8h18v16H7zm0 5h18M13 8v16' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="./"><span class="brand-mark" aria-hidden="true">▦</span>表格工坊</a><span class="privacy">内容仅在本机浏览器处理</span></header>
+  <main>
+    <div class="workspace-heading"><div><span class="eyebrow">AI / MARKDOWN → OFFICE</span><h1>表格转换与排版</h1></div><button id="sample" class="button secondary">载入示例</button></div>
+    <div class="workspace">
+      <section class="input-panel" aria-labelledby="input-heading">
+        <div class="panel-heading"><h2 id="input-heading"><span class="step">01</span>粘贴表格</h2><button id="clear" class="text-button">清空</button></div>
+        <label class="sr-only" for="source">Markdown 表格或从网页复制的表格</label>
+        <textarea id="source" spellcheck="false" placeholder="在这里粘贴 Markdown 表格，或从 AI 对话中复制的表格…"></textarea>
+        <div class="source-footer"><span id="source-kind">Markdown</span><span id="dimensions"></span></div>
+        <div id="message" class="message" role="status" aria-live="polite"></div>
+        <div class="input-note"><strong>内容保留，排版重做</strong><p>支持中文、单元格换行和空值。编号与长数字按文本保留。</p></div>
+      </section>
+      <section class="output-panel" aria-labelledby="output-heading">
+        <div class="panel-heading"><h2 id="output-heading"><span class="step">02</span>选择输出</h2><span class="editable-label">可编辑表格</span></div>
+        <div id="targets" class="target-tabs" role="group" aria-label="目标软件"><button class="target active" data-target="word" aria-pressed="true"><span class="app-icon word">W</span>Word</button><button class="target" data-target="excel" aria-pressed="false"><span class="app-icon excel">X</span>Excel</button><button class="target" data-target="ppt" aria-pressed="false"><span class="app-icon ppt">P</span>PowerPoint</button></div>
+        <div class="options"><label><span id="title-label">表格标题</span><input id="table-title" value="办公用品清单（示例）" maxlength="80"></label><label>样式<select id="theme"><option id="plain-theme" value="plain" hidden disabled>无样式（仅数据）</option><option value="clean">简洁办公</option><option value="academic">学术三线表</option><option value="presentation">汇报演示</option></select></label></div>
+        <div class="preview-toolbar"><span>排版预览</span><span id="preview-caption">Word · A4</span></div>
+        <div class="preview-well"><div id="preview" class="preview-sheet"></div></div>
+        <div class="output-footer"><p id="output-hint">导出原生 Word 表格，支持继续修改。</p><div class="actions"><button id="copy" class="button secondary">复制表格</button><button id="download" class="button primary">下载 .docx <span aria-hidden="true">↓</span></button></div></div>
+      </section>
+    </div>
+    <p class="footnote">预览用于检查布局；Office 中的字体与分页可能略有不同。 <a href="https://github.com/peta-webster/table-workshop" target="_blank" rel="noopener noreferrer">GitHub · v0.1.0</a></p>
+  </main>
+  <script defer src="./vendor/docx.js"></script>
+  <script defer src="./vendor/exceljs.js"></script>
+  <script defer src="./vendor/pptxgen.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

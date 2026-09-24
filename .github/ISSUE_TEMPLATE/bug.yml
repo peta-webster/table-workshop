@@ -1,0 +1,32 @@
+name: Compatibility or bug report / 兼容性与问题反馈
+description: Report a reproducible table conversion problem.
+body:
+  - type: textarea
+    id: input
+    attributes:
+      label: Minimal table / 最小表格
+      description: Use synthetic or sanitized data. Paste the Markdown or TSV input.
+      render: markdown
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: OS, browser and Office versions / 软件版本
+      placeholder: macOS 15, Chrome 140, Microsoft Excel 16.x
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps / 操作步骤
+      description: Include target, style, copy or download, and the Office paste option.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Expected and actual result / 预期与实际结果
+      description: Screenshots or a sanitized exported file can help.
+    validations:
+      required: true

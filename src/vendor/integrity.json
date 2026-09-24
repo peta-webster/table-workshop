@@ -1,0 +1,30 @@
+{
+  "docx": {
+    "version": "9.6.1",
+    "files": {
+      "docx.js": "ecef72931c98461fc327aa6e95867820aced5db4c3d971ac5ad38ccda21dd360",
+      "docx-LICENSE": "b5b2364c0c95a26b2a2399d7e706a61acac680be1d5b180b00592ee85830bffb"
+    }
+  },
+  "exceljs": {
+    "version": "4.4.0",
+    "files": {
+      "exceljs.js": "7e49da68588e250dbb8bba190d2caa8ab3787cc0284bda1d8b2f805c4df742c9",
+      "exceljs-LICENSE": "2ed526b7e7c7681dc2347995b5036ddf73dc27d0539cdea59b6d4a72b63a57a0"
+    }
+  },
+  "marked": {
+    "version": "17.0.5",
+    "files": {
+      "marked.js": "0b4487359ce6b85108708e7a532e1242a27f4718241e7b2de109ac6cd307d2dc",
+      "marked-LICENSE": "8e3a3f82f59a60958f56ca08f445647c32a4733dc7ca6c2c46f6eb898471ab9c"
+    }
+  },
+  "pptxgenjs": {
+    "version": "4.0.1",
+    "files": {
+      "pptxgen.js": "4fb9eac5cfefb213e2d8743c2b7151025f31bfb3f834c73c12062916daa0f3f8",
+      "pptxgenjs-LICENSE": "7a2bfe96150786ed1908b8e63f98ebab88875c1e79e28faff6649e0f11f77e52"
+    }
+  }
+}

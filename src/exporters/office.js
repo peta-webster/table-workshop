@@ -1,4 +1,4 @@
-import { THEMES, typedValue, columnWeights, estimateLines, slidePages, escapeHtml, visibleLength } from '../core/model.js';
+import { THEMES, cellAppearance, typedValue, columnWeights, estimateLines, slidePages, escapeHtml, visibleLength } from '../core/model.js';
 
 export async function wordBlob(model, title, themeName) {
   const D = window.docx; if (!D) throw new Error('Word 导出组件加载失败，请刷新页面重试。');
@@ -11,24 +11,25 @@ export async function wordBlob(model, title, themeName) {
   const rows = [model.headers, ...model.rows].map((row, r, all) => new D.TableRow({
     tableHeader: r === 0, cantSplit: false,
     children: row.map((text, c) => {
-      let borders = { top: none, left: none, right: none, bottom: border };
+      const appearance = cellAppearance(theme, r, c);
+      let borders = theme.grid ? { top: border, left: border, right: border, bottom: border } : { top: none, left: none, right: none, bottom: border };
       if (themeName === 'academic') borders = { top: r === 0 ? { ...border, size: 10 } : none, left: none, right: none, bottom: r === 0 ? border : r === all.length - 1 ? { ...border, size: 10 } : none };
       return new D.TableCell({
         width: { size: widths[c], type: D.WidthType.DXA }, borders,
-        margins: { top: 100, bottom: 100, left: 100, right: 100 },
-        shading: { fill: r === 0 ? theme.head : r % 2 === 0 ? theme.band : 'FFFFFF' },
+        margins: Object.fromEntries(['top', 'bottom', 'left', 'right'].map(side => [side, theme.padding ? theme.padding * 20 : 100])),
+        shading: { fill: appearance.fill },
         verticalAlign: D.VerticalAlign.TOP,
         children: text.split('\n').map(line => new D.Paragraph({
           alignment: model.align[c] || 'left',
           spacing: { after: 0, line: 280 },
-          children: [new D.TextRun({ text: line, bold: r === 0, font: { ascii: 'Arial', hAnsi: 'Arial', eastAsia: 'Microsoft YaHei' }, size: 21, color: r === 0 ? theme.ink : '202B40' })]
+          children: [new D.TextRun({ text: line, bold: appearance.bold, font: { ascii: 'Arial', hAnsi: 'Arial', eastAsia: 'Microsoft YaHei' }, size: 21, color: appearance.color })]
         }))
       });
     })
   }));
   const table = new D.Table({ rows, columnWidths: widths, width: { size: available, type: D.WidthType.DXA }, layout: D.TableLayoutType.FIXED, borders: { top: none, bottom: none, left: none, right: none, insideHorizontal: none, insideVertical: none } });
   const children = [];
-  if (title) children.push(new D.Paragraph({ heading: D.HeadingLevel.TITLE, spacing: { after: 240 }, children: [new D.TextRun({ text: title, font: { ascii: 'Arial', hAnsi: 'Arial', eastAsia: 'Microsoft YaHei' }, size: 32, bold: true, color: '202B40' })] }));
+  if (title) children.push(new D.Paragraph({ heading: D.HeadingLevel.TITLE, spacing: { after: 240 }, children: [new D.TextRun({ text: title, font: { ascii: 'Arial', hAnsi: 'Arial', eastAsia: 'Microsoft YaHei' }, size: 32, bold: true, color: theme.body || '202B40' })] }));
   children.push(table);
   const doc = new D.Document({ creator: '表格工坊', title, sections: [{ properties: { page: { size: { width: 11906, height: 16838, orientation: landscape ? D.PageOrientation.LANDSCAPE : D.PageOrientation.PORTRAIT }, margin: { top: 900, bottom: 900, left: 900, right: 900 } } }, children }] });
   return D.Packer.toBlob(doc);
@@ -54,23 +55,24 @@ export async function excelBlob(model, title, themeName) {
   let headerRow = 1;
   if (title) {
     sheet.mergeCells(1, 1, 1, model.headers.length);
-    sheet.getCell(1, 1).value = title; sheet.getCell(1, 1).font = { name: 'Arial', size: 17, bold: true, color: { argb: 'FF202B40' } }; sheet.getRow(1).height = 33;
+    sheet.getCell(1, 1).value = title; sheet.getCell(1, 1).font = { name: 'Arial', size: 17, bold: true, color: { argb: 'FF' + (theme.body || '202B40') } }; sheet.getRow(1).height = 33;
     headerRow = 3; sheet.getRow(2).height = 10;
   }
   [model.headers, ...model.rows].forEach((row, r, all) => {
     const target = sheet.getRow(r + headerRow);
     row.forEach((text, c) => {
+      const appearance = cellAppearance(theme, r, c);
       const cell = target.getCell(c + 1); const typed = r ? typedValue(text, model.headers[c]) : { value: text, format: '@' };
       cell.value = typed.value; cell.numFmt = typed.format;
-      cell.font = { name: 'Arial', size: 11, bold: r === 0, color: { argb: 'FF' + (r === 0 ? theme.ink : '202B40') } };
-      cell.alignment = { vertical: 'top', horizontal: r && typeof typed.value === 'number' ? 'right' : model.align[c] || 'left', wrapText: true, indent: 1 };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + (r === 0 ? theme.head : r % 2 === 0 ? theme.band : 'FFFFFF') } };
+      cell.font = { name: 'Arial', size: 11, bold: appearance.bold, color: { argb: 'FF' + appearance.color } };
+      cell.alignment = { vertical: 'top', horizontal: r && typeof typed.value === 'number' ? 'right' : model.align[c] || 'left', wrapText: true, indent: themeName === 'compact' ? 0 : 1 };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + appearance.fill } };
       const line = { style: 'thin', color: { argb: 'FF' + theme.line } };
       cell.border = themeName === 'academic'
         ? { ...(r === 0 ? { top: { ...line, style: 'medium' }, bottom: line } : {}), ...(r === all.length - 1 ? { bottom: { ...line, style: 'medium' } } : {}) }
-        : { bottom: line };
+        : theme.grid ? { top: line, bottom: line, left: line, right: line } : { bottom: line };
     });
-    const height = Math.max(29, ...row.map((v, c) => estimateLines(v, widths[c] * 7 / 72 - .08, 11) * 15.5 + 10));
+    const height = Math.max(themeName === 'compact' ? 21 : 29, ...row.map((v, c) => estimateLines(v, widths[c] * 7 / 72 - .08, 11) * 15.5 + (theme.padding ? theme.padding * 2 : 10)));
     if (height > 409) throw new Error('单行文字超出 Excel 的行高限制，请拆分过长的单元格后重试。');
     target.height = height;
   });
@@ -84,18 +86,19 @@ export async function pptBlob(model, title, themeName) {
   const P = window.PptxGenJS; if (!P) throw new Error('PowerPoint 导出组件加载失败，请刷新页面重试。');
   const ppt = new P(); ppt.layout = 'LAYOUT_WIDE'; ppt.author = '表格工坊'; ppt.subject = '可编辑表格'; ppt.title = title; ppt.lang = 'zh-CN';
   ppt.theme = { headFontFace: 'Microsoft YaHei', bodyFontFace: 'Microsoft YaHei', lang: 'zh-CN' };
-  const theme = THEMES[themeName]; const { pages, widths, fontSize } = slidePages(model);
+  const theme = THEMES[themeName]; const { pages, widths, fontSize } = slidePages(model, themeName);
   pages.forEach((page, i) => {
     const slide = ppt.addSlide(); slide.background = { color: 'FFFFFF' };
     slide.addShape(ppt.ShapeType.rect, { x: .64, y: .48, w: .08, h: .34, fill: { color: theme.accent }, line: { color: theme.accent, transparency: 100 } });
-    if (title) slide.addText(title, { x: .87, y: .28, w: 11.8, h: .82, fontSize: visibleLength(title) > 90 ? 17 : 25, bold: true, color: '202B40', margin: 0, breakLine: false });
+    if (title) slide.addText(title, { x: .87, y: .28, w: 11.8, h: .82, fontSize: visibleLength(title) > 90 ? 17 : 25, bold: true, color: theme.body || '202B40', margin: 0, breakLine: false });
     const rows = [model.headers, ...page.rows].map((row, r, all) => row.map((text, c) => {
+      const appearance = cellAppearance(theme, r, c);
       const normal = { type: 'solid', pt: .6, color: theme.line }; const empty = { type: 'solid', pt: 0, color: 'FFFFFF' };
-      const borders = themeName === 'academic' ? [r === 0 ? { ...normal, pt: 1.4 } : empty, empty, r === 0 ? normal : r === all.length - 1 ? { ...normal, pt: 1.4 } : empty, empty] : [empty, empty, normal, empty];
-      return { text, options: { bold: r === 0, color: r === 0 ? theme.ink : '202B40', fill: { color: r === 0 ? theme.head : r % 2 === 0 ? theme.band : 'FFFFFF' }, align: model.align[c] || 'left', border: borders } };
+      const borders = themeName === 'academic' ? [r === 0 ? { ...normal, pt: 1.4 } : empty, empty, r === 0 ? normal : r === all.length - 1 ? { ...normal, pt: 1.4 } : empty, empty] : theme.grid ? [normal, normal, normal, normal] : [empty, empty, normal, empty];
+      return { text, options: { bold: appearance.bold, color: appearance.color, fill: { color: appearance.fill }, align: model.align[c] || 'left', border: borders } };
     }));
-    slide.addTable(rows, { x: .64, y: 1.28, w: 12.05, colW: widths, rowH: page.heights, fontFace: 'Microsoft YaHei', fontSize, margin: [6, 7, 6, 7], valign: 'top', paraSpaceAfter: 0, autoPage: false, breakLine: false });
-    slide.addText((i + 1) + ' / ' + pages.length, { x: 11.9, y: 6.95, w: .75, h: .2, fontFace: 'Arial', fontSize: 10, color: '788398', align: 'right', margin: 0 });
+    slide.addTable(rows, { x: .64, y: 1.28, w: 12.05, colW: widths, rowH: page.heights, fontFace: 'Microsoft YaHei', fontSize, margin: theme.padding ? [theme.padding, theme.padding, theme.padding, theme.padding] : [6, 7, 6, 7], valign: 'top', paraSpaceAfter: 0, autoPage: false, breakLine: false });
+    slide.addText((i + 1) + ' / ' + pages.length, { x: 11.9, y: 6.95, w: .75, h: .2, fontFace: 'Arial', fontSize: 10, color: theme.body || '788398', align: 'right', margin: 0 });
   });
   return ppt.write({ outputType: 'blob' });
 }
@@ -119,18 +122,19 @@ export function clipboardHtml(model, themeName, target) {
   const rows = [model.headers, ...model.rows].map((row, r, all) => '<tr>' + row.map((v, c) => {
     const numeric = r && typeof typedValue(v, model.headers[c]).value === 'number';
     const tag = r === 0 ? 'th' : 'td';
+    const appearance = cellAppearance(theme, r, c);
     const border = themeName === 'academic'
       ? (r === 0 ? 'border-top:2px solid #202b40;border-bottom:1px solid #202b40;' : r === all.length - 1 ? 'border-bottom:2px solid #202b40;' : 'border:0;')
-      : 'border-bottom:1px solid #' + theme.line + ';';
+      : (theme.grid ? 'border:1px solid #' : 'border-bottom:1px solid #') + theme.line + ';';
     const excelFormat = target === 'excel' && !numeric ? 'mso-number-format:"\\@";' : '';
     const width = (weights[c] * 100).toFixed(2) + '%';
     const align = model.align[c] || 'left';
-    const textStyle = 'color:#' + (r === 0 ? theme.ink : '202B40') + ';font-family:Arial,Microsoft YaHei,sans-serif;mso-fareast-font-family:Microsoft YaHei;font-size:11pt;font-weight:' + (r === 0 ? 'bold' : 'normal') + ';';
+    const textStyle = 'color:#' + appearance.color + ';font-family:Arial,Microsoft YaHei,sans-serif;mso-fareast-font-family:Microsoft YaHei;font-size:11pt;font-weight:' + (appearance.bold ? 'bold' : 'normal') + ';';
     // Word does not reliably inherit character formatting from table cells.
     let content = '<span style="' + textStyle + '">' + escapeHtml(v).replace(/\n/g, '<br style="mso-data-placement:same-cell">') + '</span>';
     // Reset the destination document's paragraph spacing and first-line indent.
     if (forWord) content = '<p style="margin:0;text-indent:0;line-height:115%;text-align:' + align + ';' + textStyle + '">' + content + '</p>';
-    return '<' + tag + ' width="' + width + '" style=\'' + excelFormat + 'width:' + width + ';padding:6pt;border-collapse:collapse;border:0;' + border + 'vertical-align:top;text-align:' + align + ';background:#' + (r === 0 ? theme.head : r % 2 === 0 ? theme.band : 'FFFFFF') + ';' + textStyle + '\'>' + content + '</' + tag + '>';
+    return '<' + tag + ' width="' + width + '" style=\'' + excelFormat + 'width:' + width + ';padding:' + (theme.padding ?? 6) + 'pt;border-collapse:collapse;border:0;' + border + 'vertical-align:top;text-align:' + align + ';background:#' + appearance.fill + ';' + textStyle + '\'>' + content + '</' + tag + '>';
   }).join('') + '</tr>').join('');
   // A percentage width lets Word use the recipient's text area, including margins.
   const tableWidth = forWord ? '100%' : '680px';

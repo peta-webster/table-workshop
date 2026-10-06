@@ -4,8 +4,21 @@ export const SAMPLE = "| 物品编号 | 物品 | 单价 | 可用率 | 备注 |\n
 export const THEMES = {
   clean: { name: '简洁办公', head: 'EDF2FA', ink: '334364', band: 'F8FAFF', line: 'DFE5EF', accent: '2C4CF0' },
   academic: { name: '学术三线表', head: 'FFFFFF', ink: '202B40', band: 'FFFFFF', line: '202B40', accent: '202B40' },
-  presentation: { name: '汇报演示', head: '263D76', ink: 'FFFFFF', band: 'E7EDF7', line: 'FFFFFF', accent: '2C4CF0' }
+  presentation: { name: '汇报演示', head: '263D76', ink: 'FFFFFF', band: 'E7EDF7', line: 'FFFFFF', accent: '2C4CF0' },
+  print: { name: '黑白打印', head: 'FFFFFF', ink: '000000', body: '000000', band: 'FFFFFF', line: '555555', accent: '000000', grid: true },
+  horizontal: { name: '轻量横线', head: 'FFFFFF', ink: '334364', band: 'FFFFFF', line: 'DCE2EA', accent: '64748B', padding: 9 },
+  compact: { name: '紧凑网格', head: 'F0F2F5', ink: '334155', band: 'FFFFFF', line: 'B8C2CF', accent: '475569', grid: true, padding: 3 },
+  firstColumn: { name: '首列强调', head: 'E8F0EE', ink: '284D43', band: 'FFFFFF', line: 'D8E4DF', accent: '397260', firstFill: 'F0F6F3' }
 };
+
+export function cellAppearance(theme, row, column) {
+  const first = row > 0 && column === 0 && !!theme.firstFill;
+  return {
+    fill: row === 0 ? theme.head : first ? theme.firstFill : row % 2 === 0 ? theme.band : 'FFFFFF',
+    color: row === 0 || first ? theme.ink : theme.body || '202B40',
+    bold: row === 0 || first
+  };
+}
 
 function fragment(html) {
   const template = document.createElement('template');
@@ -118,11 +131,12 @@ export function estimateLines(text, width, size) {
   const capacity = Math.max(1, width * 72 / (size * .57));
   return text.split('\n').reduce((n, line) => n + Math.max(1, Math.ceil(visibleLength(line) / capacity)), 0);
 }
-export function slidePages(model) {
+export function slidePages(model, themeName) {
   if (model.headers.length > 10) throw new Error('PowerPoint 当前支持最多 10 列；这张宽表建议导出 Excel 或 Word。');
   const widths = columnWeights(model).map(w => w * 12.05);
   const fontSize = model.headers.length > 7 ? 14 : 17;
-  const rowHeight = (row, size = fontSize) => Math.max(.46, ...row.map((v, c) => estimateLines(v, widths[c] - .2, size) * size * 1.3 / 72 + .18));
+  const padding = THEMES[themeName]?.padding;
+  const rowHeight = (row, size = fontSize) => Math.max(padding === 3 ? .34 : .46, ...row.map((v, c) => estimateLines(v, widths[c] - (padding ? padding * 2 / 72 : .2), size) * size * 1.3 / 72 + (padding ? padding * 2 / 72 + .02 : .18)));
   const headerHeight = rowHeight(model.headers);
   if (headerHeight > 1.8) throw new Error('表头文字太长，请缩短表头后导出 PowerPoint。');
   const pages = []; let rows = []; let heights = [headerHeight]; let used = headerHeight;

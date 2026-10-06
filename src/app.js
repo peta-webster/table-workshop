@@ -1,4 +1,4 @@
-import { SAMPLE, parseSource, parseHtml, toMarkdown, columnWeights, slidePages, typedValue } from './core/model.js';
+import { SAMPLE, THEMES, cellAppearance, parseSource, parseHtml, toMarkdown, columnWeights, slidePages, typedValue } from './core/model.js';
 import { wordBlob, excelBlob, pptBlob, clipboardHtml, saveBlob } from './exporters/office.js';
 
 const $ = s => document.querySelector(s);
@@ -23,7 +23,10 @@ function makeTable(model, rows = model.rows) {
   const head = document.createElement('thead'); const body = document.createElement('tbody');
   [model.headers, ...rows].forEach((row, r) => {
     const tr = document.createElement('tr');
-    row.forEach((value, c) => { const cell = document.createElement(r === 0 ? 'th' : 'td'); if (r === 0) cell.scope = 'col'; cell.textContent = value; cell.style.textAlign = isPlainExcel() ? (r && typeof typedValue(value, model.headers[c]).value === 'number' ? 'right' : 'left') : model.align[c] || 'left'; tr.append(cell); });
+    row.forEach((value, c) => { const cell = document.createElement(r === 0 ? 'th' : 'td'); if (r === 0) cell.scope = 'col'; cell.textContent = value; cell.style.textAlign = isPlainExcel() ? (r && typeof typedValue(value, model.headers[c]).value === 'number' ? 'right' : 'left') : model.align[c] || 'left'; if (['print', 'horizontal', 'compact', 'firstColumn'].includes(state.theme)) {
+      const theme = THEMES[state.theme]; const appearance = cellAppearance(theme, r, c);
+      Object.assign(cell.style, { background: '#' + appearance.fill, color: '#' + appearance.color, fontWeight: appearance.bold ? '700' : '400', border: theme.grid ? '1px solid #' + theme.line : '0', borderBottom: '1px solid #' + theme.line, padding: (theme.padding ?? 6) + 'pt' });
+    } tr.append(cell); });
     (r ? body : head).append(tr);
   });
   table.append(head, body); return table;
@@ -48,7 +51,7 @@ function render() {
   let rows = state.model.rows;
   if (state.target === 'ppt') {
     try {
-      const result = slidePages(state.model); rows = result.pages[0].rows;
+      const result = slidePages(state.model, state.theme); rows = result.pages[0].rows;
       $('#preview-caption').textContent = m.label + ' · 第 1 / ' + result.pages.length + ' 页';
     } catch (error) { message(error.message, true); $('#download').disabled = true; }
   }
@@ -63,7 +66,7 @@ function updateSource(text = $('#source').value) {
 function configure({ source, title, theme, target }) {
   if (source !== undefined && typeof source !== 'string') throw new Error('source 必须是字符串。');
   if (title !== undefined && (typeof title !== 'string' || title.length > 80)) throw new Error('标题长度不能超过 80 个字符。');
-  if (theme !== undefined && !['plain', 'clean', 'academic', 'presentation'].includes(theme)) throw new Error('未知样式。');
+  if (theme !== undefined && !['plain', ...Object.keys(THEMES)].includes(theme)) throw new Error('未知样式。');
   if (target !== undefined && !Object.keys(meta).includes(target)) throw new Error('未知目标软件。');
   if (theme === 'plain' && (target || state.target) !== 'excel') throw new Error('“无样式（仅数据）”仅适用于 Excel。');
   // Validate before changing visible state.
@@ -134,7 +137,7 @@ const context = document.modelContext;
 if (context?.registerTool) {
   const lifecycle = new AbortController();
   const registrations = [
-    { name: 'configure_table', title: '设置表格与排版', description: '输入一张表格并设置目标软件、标题或样式，更新页面预览，不下载文件。plain 无样式仅适用于 Excel，此时 title 只作为下载文件名。', inputSchema: { type: 'object', properties: { source: { type: 'string' }, title: { type: 'string', maxLength: 80 }, target: { enum: ['word', 'excel', 'ppt'] }, theme: { enum: ['plain', 'clean', 'academic', 'presentation'] } }, additionalProperties: false }, annotations: { readOnlyHint: false }, execute: configure },
+    { name: 'configure_table', title: '设置表格与排版', description: '输入一张表格并设置目标软件、标题或样式，更新页面预览，不下载文件。plain 无样式仅适用于 Excel，此时 title 只作为下载文件名。', inputSchema: { type: 'object', properties: { source: { type: 'string' }, title: { type: 'string', maxLength: 80 }, target: { enum: ['word', 'excel', 'ppt'] }, theme: { enum: ['plain', ...Object.keys(THEMES)] } }, additionalProperties: false }, annotations: { readOnlyHint: false }, execute: configure },
     { name: 'get_table_status', title: '读取表格状态', description: '读取当前表格尺寸、输出软件与样式。', inputSchema: { type: 'object', properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, execute: snapshot }
   ];
   for (const tool of registrations) { try { Promise.resolve(context.registerTool(tool, { signal: lifecycle.signal })).catch(() => {}); } catch {} }

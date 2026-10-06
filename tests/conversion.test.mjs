@@ -122,22 +122,22 @@ test('long PowerPoint tables retain all rows across editable slides', async () =
   assert.equal(dataRows, 45);
 });
 
-test('new styles retain cell content, borders and emphasis across clipboard and Office files', async () => {
-  for (const name of ['print', 'horizontal', 'compact', 'firstColumn']) {
+test('new styles retain cell content and borders across clipboard and Office files', async () => {
+  for (const name of ['print', 'horizontal', 'compact']) {
     const fragment = new JSDOM(clipboardHtml(model, name, 'word')).window.document;
     const first = fragment.querySelector('td');
     assert.equal(first.textContent, '00123');
     assert.equal(fragment.querySelector('table').style.width, '100%');
     assert.equal(first.style.borderLeftWidth, ['print', 'compact'].includes(name) ? '1px' : '0px');
     assert.equal(first.style.padding, name === 'compact' ? '3pt' : name === 'horizontal' ? '9pt' : '6pt');
-    assert.equal(first.querySelector('span').style.fontWeight, name === 'firstColumn' ? 'bold' : 'normal');
+    assert.equal(first.querySelector('span').style.fontWeight, 'normal');
     if (name === 'print') assert.equal(first.querySelector('span').style.color, 'rgb(0, 0, 0)');
 
     const word = xml(await (await unzip(await wordBlob(model, '', name))).file('word/document.xml').async('string'));
     const wordCell = word.getElementsByTagName('w:tr')[1].getElementsByTagName('w:tc')[0];
     assert.equal(wordCell.getElementsByTagName('w:t')[0].textContent, '00123');
     assert.equal(wordCell.getElementsByTagName('w:left')[0].getAttribute('w:val'), ['print', 'compact'].includes(name) ? 'single' : 'none');
-    assert.equal(wordCell.getElementsByTagName('w:b')[0]?.getAttribute('w:val') !== 'false', name === 'firstColumn');
+    assert.equal(wordCell.getElementsByTagName('w:b')[0]?.getAttribute('w:val') !== 'false', false);
 
     const book = new sandbox.ExcelJS.Workbook();
     await book.xlsx.load(Buffer.from(await (await excelBlob(model, '', name)).arrayBuffer()).toString('base64'), { base64: true });
@@ -145,19 +145,19 @@ test('new styles retain cell content, borders and emphasis across clipboard and 
     assert.equal(sheet.getCell('A2').value, '00123');
     assert.equal(sheet.getCell('C2').value, .985);
     assert.equal(sheet.getCell('A2').border.left?.style, ['print', 'compact'].includes(name) ? 'thin' : undefined);
-    assert.equal(!!sheet.getCell('A2').font.bold, name === 'firstColumn');
+    assert.equal(!!sheet.getCell('A2').font.bold, false);
 
     const ppt = xml(await (await unzip(await pptBlob(model, '', name))).file('ppt/slides/slide1.xml').async('string'));
     assert.equal(ppt.getElementsByTagName('a:tr').length, model.rows.length + 1);
     const pptCell = ppt.getElementsByTagName('a:tr')[1].getElementsByTagName('a:tc')[0];
     assert.ok(pptCell.textContent.includes('00123'));
-    assert.equal(pptCell.getElementsByTagName('a:rPr')[0].getAttribute('b') === '1', name === 'firstColumn');
+    assert.equal(pptCell.getElementsByTagName('a:rPr')[0].getAttribute('b') === '1', false);
   }
 });
 
 test('style-aware PowerPoint spacing preserves long rows and page bounds', () => {
   const long = { headers: ['编号', '说明'], rows: Array.from({ length: 60 }, (_, i) => [String(i), '合成说明内容']), align: ['left', 'left'] };
-  for (const name of ['print', 'horizontal', 'compact', 'firstColumn']) {
+  for (const name of ['print', 'horizontal', 'compact']) {
     const plan = slidePages(long, name);
     assert.deepEqual(plan.pages.flatMap(p => p.rows), long.rows);
     for (const page of plan.pages) assert.ok(page.heights.reduce((a, b) => a + b, 0) <= 5.15);

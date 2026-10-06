@@ -11,7 +11,7 @@ export async function wordBlob(model, title, themeName) {
   const rows = [model.headers, ...model.rows].map((row, r, all) => new D.TableRow({
     tableHeader: r === 0, cantSplit: false,
     children: row.map((text, c) => {
-      const appearance = cellAppearance(theme, r, c);
+      const appearance = cellAppearance(theme, r);
       let borders = theme.grid ? { top: border, left: border, right: border, bottom: border } : { top: none, left: none, right: none, bottom: border };
       if (themeName === 'academic') borders = { top: r === 0 ? { ...border, size: 10 } : none, left: none, right: none, bottom: r === 0 ? border : r === all.length - 1 ? { ...border, size: 10 } : none };
       return new D.TableCell({
@@ -61,7 +61,7 @@ export async function excelBlob(model, title, themeName) {
   [model.headers, ...model.rows].forEach((row, r, all) => {
     const target = sheet.getRow(r + headerRow);
     row.forEach((text, c) => {
-      const appearance = cellAppearance(theme, r, c);
+      const appearance = cellAppearance(theme, r);
       const cell = target.getCell(c + 1); const typed = r ? typedValue(text, model.headers[c]) : { value: text, format: '@' };
       cell.value = typed.value; cell.numFmt = typed.format;
       cell.font = { name: 'Arial', size: 11, bold: appearance.bold, color: { argb: 'FF' + appearance.color } };
@@ -92,7 +92,7 @@ export async function pptBlob(model, title, themeName) {
     slide.addShape(ppt.ShapeType.rect, { x: .64, y: .48, w: .08, h: .34, fill: { color: theme.accent }, line: { color: theme.accent, transparency: 100 } });
     if (title) slide.addText(title, { x: .87, y: .28, w: 11.8, h: .82, fontSize: visibleLength(title) > 90 ? 17 : 25, bold: true, color: theme.body || '202B40', margin: 0, breakLine: false });
     const rows = [model.headers, ...page.rows].map((row, r, all) => row.map((text, c) => {
-      const appearance = cellAppearance(theme, r, c);
+      const appearance = cellAppearance(theme, r);
       const normal = { type: 'solid', pt: .6, color: theme.line }; const empty = { type: 'solid', pt: 0, color: 'FFFFFF' };
       const borders = themeName === 'academic' ? [r === 0 ? { ...normal, pt: 1.4 } : empty, empty, r === 0 ? normal : r === all.length - 1 ? { ...normal, pt: 1.4 } : empty, empty] : theme.grid ? [normal, normal, normal, normal] : [empty, empty, normal, empty];
       return { text, options: { bold: appearance.bold, color: appearance.color, fill: { color: appearance.fill }, align: model.align[c] || 'left', border: borders } };
@@ -122,7 +122,7 @@ export function clipboardHtml(model, themeName, target) {
   const rows = [model.headers, ...model.rows].map((row, r, all) => '<tr>' + row.map((v, c) => {
     const numeric = r && typeof typedValue(v, model.headers[c]).value === 'number';
     const tag = r === 0 ? 'th' : 'td';
-    const appearance = cellAppearance(theme, r, c);
+    const appearance = cellAppearance(theme, r);
     const border = themeName === 'academic'
       ? (r === 0 ? 'border-top:2px solid #202b40;border-bottom:1px solid #202b40;' : r === all.length - 1 ? 'border-bottom:2px solid #202b40;' : 'border:0;')
       : (theme.grid ? 'border:1px solid #' : 'border-bottom:1px solid #') + theme.line + ';';

@@ -8,15 +8,13 @@ export const THEMES = {
   print: { name: '黑白打印', head: 'FFFFFF', ink: '000000', body: '000000', band: 'FFFFFF', line: '555555', accent: '000000', grid: true },
   horizontal: { name: '轻量横线', head: 'FFFFFF', ink: '334364', band: 'FFFFFF', line: 'DCE2EA', accent: '64748B', padding: 9 },
   compact: { name: '紧凑网格', head: 'F0F2F5', ink: '334155', band: 'FFFFFF', line: 'B8C2CF', accent: '475569', grid: true, padding: 3 },
-  firstColumn: { name: '首列强调', head: 'E8F0EE', ink: '284D43', band: 'FFFFFF', line: 'D8E4DF', accent: '397260', firstFill: 'F0F6F3' }
 };
 
-export function cellAppearance(theme, row, column) {
-  const first = row > 0 && column === 0 && !!theme.firstFill;
+export function cellAppearance(theme, row) {
   return {
-    fill: row === 0 ? theme.head : first ? theme.firstFill : row % 2 === 0 ? theme.band : 'FFFFFF',
-    color: row === 0 || first ? theme.ink : theme.body || '202B40',
-    bold: row === 0 || first
+    fill: row === 0 ? theme.head : row % 2 === 0 ? theme.band : 'FFFFFF',
+    color: row === 0 ? theme.ink : theme.body || '202B40',
+    bold: row === 0
   };
 }
 

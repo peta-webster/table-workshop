@@ -23,8 +23,8 @@ function makeTable(model, rows = model.rows) {
   const head = document.createElement('thead'); const body = document.createElement('tbody');
   [model.headers, ...rows].forEach((row, r) => {
     const tr = document.createElement('tr');
-    row.forEach((value, c) => { const cell = document.createElement(r === 0 ? 'th' : 'td'); if (r === 0) cell.scope = 'col'; cell.textContent = value; cell.style.textAlign = isPlainExcel() ? (r && typeof typedValue(value, model.headers[c]).value === 'number' ? 'right' : 'left') : model.align[c] || 'left'; if (['print', 'horizontal', 'compact', 'firstColumn'].includes(state.theme)) {
-      const theme = THEMES[state.theme]; const appearance = cellAppearance(theme, r, c);
+    row.forEach((value, c) => { const cell = document.createElement(r === 0 ? 'th' : 'td'); if (r === 0) cell.scope = 'col'; cell.textContent = value; cell.style.textAlign = isPlainExcel() ? (r && typeof typedValue(value, model.headers[c]).value === 'number' ? 'right' : 'left') : model.align[c] || 'left'; if (['print', 'horizontal', 'compact'].includes(state.theme)) {
+      const theme = THEMES[state.theme]; const appearance = cellAppearance(theme, r);
       Object.assign(cell.style, { background: '#' + appearance.fill, color: '#' + appearance.color, fontWeight: appearance.bold ? '700' : '400', border: theme.grid ? '1px solid #' + theme.line : '0', borderBottom: '1px solid #' + theme.line, padding: (theme.padding ?? 6) + 'pt' });
     } tr.append(cell); });
     (r ? body : head).append(tr);

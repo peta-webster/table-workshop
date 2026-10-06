@@ -2,7 +2,7 @@
 
 Turn AI and Markdown tables into editable tables for Word, Excel and PowerPoint. Table content stays in your local browser.
 
-[中文](README.md) · [Releases](https://github.com/peta-webster/table-workshop/releases) · [Example inputs](examples/README.md) · [Compatibility notes](docs/compatibility.md)
+[Try online](https://table-workshop-lanyue.ahaml.chatgpt.site/) · [中文](README.md) · [Releases](https://github.com/peta-webster/table-workshop/releases) · [Example inputs](examples/README.md) · [Compatibility notes](docs/compatibility.md)
 
 ## Quick start
 

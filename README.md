@@ -2,7 +2,7 @@
 
 把 AI / Markdown 表格整理成适合 Word、Excel 和 PowerPoint 的可编辑表格。表格内容只在本机浏览器处理。
 
-[English](README.en.md) · [下载版本](https://github.com/peta-webster/table-workshop/releases) · [示例输入](examples/README.md) · [兼容性记录](docs/compatibility.md)
+[在线体验](https://table-workshop-lanyue.ahaml.chatgpt.site/) · [English](README.en.md) · [下载版本](https://github.com/peta-webster/table-workshop/releases) · [示例输入](examples/README.md) · [兼容性记录](docs/compatibility.md)
 
 ## 快速开始
 

@@ -41,6 +41,8 @@ These images were captured from the local app using synthetic examples. They sho
 | Excel | **Data only** is the default. Identifiers, leading zeros, long numbers and formula-looking input stay text; clear numbers and percentages stay numeric. Choose **Match Destination Formatting** when pasting into an existing sheet. |
 | PowerPoint | Download a native editable `.pptx`. Long tables split across slides with repeated headers; cross-app paste results depend on the Office version. |
 
+**Copying into Word:** Click **Copy table** in Table Workshop, paste into Word, then choose **Keep Source Formatting** from the paste options to preserve the selected style. When using Ctrl+V, check which paste option is active. **Merge Formatting** may apply the destination document's font and paragraph settings, changing indentation, line spacing or wrapping. If short headers or item names wrap unexpectedly, or text appears misplaced, undo the paste and paste again with **Keep Source Formatting**. Alternatively, download the `.docx` and open it directly in Word.
+
 In Excel, **Match Destination Formatting** also uses the destination's number format. Download `.xlsx` when the original percentage or decimal display must be preserved.
 
 ## Limits and validation

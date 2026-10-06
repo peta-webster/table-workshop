@@ -19,7 +19,7 @@ Open the `http://127.0.0.1:4173/` address printed in the terminal and keep the s
 ## How to use it
 
 1. Paste one Markdown table, HTML table from a web page, or simple tab-separated text.
-2. Choose Word, Excel or PowerPoint and a style.
+2. Choose Word, Excel or PowerPoint, a style, and a font pair: Modern Office (Microsoft YaHei / Arial) or Formal Document (SimSun / Times New Roman). Font sizes and spacing are preset. Excel's Data only mode does not set fonts. Fonts unavailable on the recipient's device may be substituted.
 3. Copy the table or download an editable Office file.
 
 ![Table Workshop input and preview with synthetic office-supply data](docs/screenshots/overview.jpg)

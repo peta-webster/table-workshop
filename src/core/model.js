@@ -1,6 +1,25 @@
 import { marked } from '../vendor/marked.js';
 
 export const SAMPLE = "| 物品编号 | 物品 | 单价 | 可用率 | 备注 |\n| --- | --- | ---: | ---: | --- |\n| 00123 | 文件夹 | 29.90 | 98.5% | 演示用虚构数据，支持中文自动换行 |\n| 00456 | 标签纸 | 0 | 100% | 颜色分类<br>便于查找 |\n| 123456789012345678 | 收纳盒 | 199.00 | 92.0% | 长编号按文本保存 |\n| 00789 | 记事本 |  |  | 空白单元格保持为空 |";
+export const FONT_PAIRS = {
+  modern: { name: '现代办公', eastAsia: 'Microsoft YaHei', latin: 'Arial', fallback: 'sans-serif' },
+  formal: { name: '正式文稿', eastAsia: 'SimSun', latin: 'Times New Roman', fallback: 'serif' }
+};
+export function fontPair(name = 'modern') {
+  if (!Object.hasOwn(FONT_PAIRS, name)) throw new Error('未知字体组合。');
+  return FONT_PAIRS[name];
+}
+export function fontFamily(name = 'modern') {
+  const font = fontPair(name);
+  return `"${font.latin}","${font.eastAsia}",${font.fallback}`;
+}
+// Keep numeric spreadsheet values numeric; split only display text into font runs.
+export function fontRuns(text, name = 'modern') {
+  const font = fontPair(name);
+  return (text.match(/[\u0000-\u024f]+|[^\u0000-\u024f]+/gu) || ['']).map(text => ({
+    text, font: /[^\u0000-\u024f]/u.test(text) ? font.eastAsia : font.latin
+  }));
+}
 export const THEMES = {
   clean: { name: '简洁办公', head: 'EDF2FA', ink: '334364', band: 'F8FAFF', line: 'DFE5EF', accent: '2C4CF0' },
   academic: { name: '学术三线表', head: 'FFFFFF', ink: '202B40', band: 'FFFFFF', line: '202B40', accent: '202B40' },

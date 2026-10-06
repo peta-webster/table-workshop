@@ -1,14 +1,17 @@
-import { SAMPLE, THEMES, cellAppearance, parseSource, parseHtml, toMarkdown, columnWeights, slidePages, typedValue } from './core/model.js';
+import { SAMPLE, THEMES, FONT_PAIRS, fontFamily, cellAppearance, parseSource, parseHtml, toMarkdown, columnWeights, slidePages, typedValue } from './core/model.js';
 import { wordBlob, excelBlob, pptBlob, clipboardHtml, saveBlob } from './exporters/office.js';
 
 const $ = s => document.querySelector(s);
-const state = { model: null, target: 'word', theme: 'clean', title: '办公用品清单（示例）', busy: false };
+const state = { model: null, target: 'word', theme: 'clean', font: 'modern', title: '办公用品清单（示例）', busy: false };
 const targetThemes = { word: 'clean', excel: 'plain', ppt: 'clean' };
+const targetFonts = { word: 'modern', excel: 'modern', ppt: 'modern' };
 const isPlainExcel = () => state.target === 'excel' && state.theme === 'plain';
 function selectTarget(target) {
   targetThemes[state.target] = state.theme;
+  targetFonts[state.target] = state.font;
   state.target = target;
   state.theme = targetThemes[target];
+  state.font = targetFonts[target];
 }
 const meta = {
   word: { ext: 'docx', label: 'Word · A4', hint: '复制的表格随正文宽度调整。粘贴到 Word 后选择“保留源格式”，保留表头颜色、字体与间距。' },
@@ -36,6 +39,8 @@ function render() {
   const plain = isPlainExcel();
   $('#plain-theme').hidden = state.target !== 'excel'; $('#plain-theme').disabled = state.target !== 'excel';
   $('#theme').value = state.theme;
+  $('#font-pair').value = state.font; $('#font-pair').disabled = plain;
+  $('#font-hint').textContent = plain ? '仅数据：沿用目标格式，不设置字体。' : '未安装的字体可能被替换。';
   $('#title-label').textContent = plain ? '文件名' : '表格标题';
   $('#copy').textContent = plain ? '复制数据' : '复制表格';
   $('#download').textContent = state.busy ? '正在生成…' : '下载 .' + m.ext + ' ↓';
@@ -45,7 +50,7 @@ function render() {
   $('#targets').querySelectorAll('button').forEach(b => { const selected = b.dataset.target === state.target; b.classList.toggle('active', selected); b.setAttribute('aria-pressed', String(selected)); });
   $('#source-kind').textContent = state.model?.kind || 'Markdown / 网页表格';
   $('#dimensions').textContent = state.model ? state.model.rows.length + ' 行 × ' + state.model.headers.length + ' 列' : '';
-  const preview = $('#preview'); preview.className = 'preview-sheet ' + state.target + '-sheet'; preview.replaceChildren();
+  const preview = $('#preview'); preview.className = 'preview-sheet ' + state.target + '-sheet'; preview.replaceChildren(); preview.style.fontFamily = plain ? '' : fontFamily(state.font);
   if (!state.model) { const empty = document.createElement('div'); empty.className = 'empty'; empty.textContent = '粘贴一张表格，在这里预览排版'; preview.append(empty); return; }
   const title = document.createElement('h3'); title.textContent = state.title; if (state.title && !plain) preview.append(title);
   let rows = state.model.rows;
@@ -63,10 +68,11 @@ function updateSource(text = $('#source').value) {
   catch (error) { state.model = null; message(error.message, true); }
   render();
 }
-function configure({ source, title, theme, target }) {
+function configure({ source, title, theme, target, font }) {
   if (source !== undefined && typeof source !== 'string') throw new Error('source 必须是字符串。');
   if (title !== undefined && (typeof title !== 'string' || title.length > 80)) throw new Error('标题长度不能超过 80 个字符。');
   if (theme !== undefined && !['plain', ...Object.keys(THEMES)].includes(theme)) throw new Error('未知样式。');
+  if (font !== undefined && !Object.hasOwn(FONT_PAIRS, font)) throw new Error('未知字体组合。');
   if (target !== undefined && !Object.keys(meta).includes(target)) throw new Error('未知目标软件。');
   if (theme === 'plain' && (target || state.target) !== 'excel') throw new Error('“无样式（仅数据）”仅适用于 Excel。');
   // Validate before changing visible state.
@@ -74,17 +80,18 @@ function configure({ source, title, theme, target }) {
   if (source !== undefined) { $('#source').value = source; state.model = parsed; }
   if (title !== undefined) { state.title = title; $('#table-title').value = title; }
   if (target !== undefined) selectTarget(target);
+  if (font !== undefined) { state.font = font; targetFonts[state.target] = font; }
   if (theme !== undefined) { state.theme = theme; targetThemes[state.target] = theme; }
   message(state.model ? '已识别表格，可以选择样式并导出。' : ''); render(); return snapshot();
 }
-function snapshot() { return { target: state.target, theme: state.theme, title: state.title, rows: state.model?.rows.length || 0, columns: state.model?.headers.length || 0, ready: !!state.model }; }
+function snapshot() { return { target: state.target, theme: state.theme, font: state.font, title: state.title, rows: state.model?.rows.length || 0, columns: state.model?.headers.length || 0, ready: !!state.model }; }
 async function exportFile() {
   if (!state.model || state.busy) return;
-  const { model, title, theme, target } = state;
+  const { model, title, theme, target, font } = state;
   state.busy = true; render();
   try {
     const build = { word: wordBlob, excel: excelBlob, ppt: pptBlob }[target];
-    const blob = await build(model, title, theme);
+    const blob = await build(model, title, theme, font);
     const name = (title.trim() || '表格').replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_');
     saveBlob(blob, name + '.' + meta[target].ext);
     message('文件已生成。打开后可以继续编辑表格。');
@@ -93,7 +100,7 @@ async function exportFile() {
 }
 async function copyTable() {
   if (!state.model) return;
-  const html = clipboardHtml(state.model, state.theme, state.target);
+  const html = clipboardHtml(state.model, state.theme, state.target, state.font);
   // Plain-text fallback keeps line breaks inside a cell unambiguous.
   const plain = [state.model.headers, ...state.model.rows].map(r => r.map(v => /[\t\n"]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v).join('\t')).join('\n');
   try {
@@ -128,6 +135,7 @@ $('#sample').onclick = () => configure({ source: SAMPLE, title: '办公用品清
 $('#clear').onclick = () => { updateSource(''); $('#source').focus(); };
 $('#table-title').oninput = event => { state.title = event.target.value; render(); };
 $('#theme').onchange = event => { state.theme = event.target.value; targetThemes[state.target] = state.theme; render(); };
+$('#font-pair').onchange = event => { state.font = event.target.value; targetFonts[state.target] = state.font; render(); };
 $('#targets').onclick = event => { const button = event.target.closest('[data-target]'); if (button) { selectTarget(button.dataset.target); message(state.model ? '已切换输出格式。' : ''); render(); } };
 $('#download').onclick = exportFile; $('#copy').onclick = copyTable;
 updateSource(SAMPLE);
@@ -137,7 +145,7 @@ const context = document.modelContext;
 if (context?.registerTool) {
   const lifecycle = new AbortController();
   const registrations = [
-    { name: 'configure_table', title: '设置表格与排版', description: '输入一张表格并设置目标软件、标题或样式，更新页面预览，不下载文件。plain 无样式仅适用于 Excel，此时 title 只作为下载文件名。', inputSchema: { type: 'object', properties: { source: { type: 'string' }, title: { type: 'string', maxLength: 80 }, target: { enum: ['word', 'excel', 'ppt'] }, theme: { enum: ['plain', ...Object.keys(THEMES)] } }, additionalProperties: false }, annotations: { readOnlyHint: false }, execute: configure },
+    { name: 'configure_table', title: '设置表格与排版', description: '输入一张表格并设置目标软件、标题、样式或字体组合，更新页面预览，不下载文件。plain 无样式仅适用于 Excel，此时 title 只作为下载文件名。', inputSchema: { type: 'object', properties: { source: { type: 'string' }, title: { type: 'string', maxLength: 80 }, target: { enum: ['word', 'excel', 'ppt'] }, theme: { enum: ['plain', ...Object.keys(THEMES)] }, font: { enum: Object.keys(FONT_PAIRS) } }, additionalProperties: false }, annotations: { readOnlyHint: false }, execute: configure },
     { name: 'get_table_status', title: '读取表格状态', description: '读取当前表格尺寸、输出软件与样式。', inputSchema: { type: 'object', properties: {}, additionalProperties: false }, annotations: { readOnlyHint: true }, execute: snapshot }
   ];
   for (const tool of registrations) { try { Promise.resolve(context.registerTool(tool, { signal: lifecycle.signal })).catch(() => {}); } catch {} }

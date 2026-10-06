@@ -164,3 +164,38 @@ test('style-aware PowerPoint spacing preserves long rows and page bounds', () =>
   }
   assert.ok(slidePages(long, 'compact').pages[0].rows.length > slidePages(long, 'horizontal').pages[0].rows.length);
 });
+
+test('font pairs reach clipboard and native Office text without changing numeric types', async () => {
+  const mixed = { headers: ['项目 Item', '数值'], rows: [['中文 ABC\n下一行', '98.5%'], ['00123', '29.90']], align: ['left', 'right'] };
+  for (const [name, eastAsia, latin] of [['modern', 'Microsoft YaHei', 'Arial'], ['formal', 'SimSun', 'Times New Roman']]) {
+    const html = clipboardHtml(mixed, 'clean', 'word', name);
+    const fragment = new JSDOM(html).window.document;
+    assert.ok(fragment.querySelector('td span').style.fontFamily.includes(latin));
+    assert.ok(html.includes('mso-fareast-font-family:' + eastAsia));
+    assert.equal(fragment.querySelector('td p').style.textIndent, '0');
+    const word = xml(await (await unzip(await wordBlob(mixed, '示例 Title', 'clean', name))).file('word/document.xml').async('string'));
+    for (const fonts of word.getElementsByTagName('w:rFonts')) {
+      assert.equal(fonts.getAttribute('w:eastAsia'), eastAsia);
+      assert.equal(fonts.getAttribute('w:ascii'), latin);
+    }
+    const book = new sandbox.ExcelJS.Workbook();
+    await book.xlsx.load(Buffer.from(await (await excelBlob(mixed, '', 'clean', name)).arrayBuffer()).toString('base64'), { base64: true });
+    const sheet = book.worksheets[0];
+    const runs = sheet.getCell('A2').value.richText;
+    assert.equal(runs.map(run => run.text).join(''), '中文 ABC\n下一行');
+    assert.ok(runs.some(run => run.font.name === eastAsia));
+    assert.ok(runs.some(run => run.font.name === latin));
+    assert.equal(sheet.getCell('B2').value, .985);
+    assert.equal(sheet.getCell('A3').value, '00123');
+    assert.equal(sheet.getCell('B3').value, 29.9);
+    const ppt = xml(await (await unzip(await pptBlob(mixed, '示例 Title', 'clean', name))).file('ppt/slides/slide1.xml').async('string'));
+    const faces = [...ppt.getElementsByTagName('a:latin')].map(node => node.getAttribute('typeface'));
+    assert.ok(faces.includes(eastAsia)); assert.ok(faces.includes(latin));
+    assert.equal(ppt.getElementsByTagName('a:tr').length, 3);
+    assert.ok(ppt.documentElement.textContent.includes('下一行'));
+    assert.equal(clipboardHtml(mixed, 'plain', 'excel', name), clipboardHtml(mixed, 'plain', 'excel'));
+    const plain = await unzip(await excelBlob(mixed, '', 'plain', name));
+    const styles = await plain.file('xl/styles.xml').async('string');
+    assert.ok(!styles.includes(eastAsia)); assert.ok(!styles.includes(latin));
+  }
+});

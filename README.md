@@ -19,7 +19,7 @@ npm start
 ## 使用方法
 
 1. 粘贴一张 Markdown 表格、网页 HTML 表格或简单制表符文本。
-2. 选择 Word、Excel 或 PowerPoint，再选择样式。
+2. 选择 Word、Excel 或 PowerPoint，再选择样式和字体组合：「现代办公」（微软雅黑 / Arial）或「正式文稿」（宋体 / Times New Roman）。字号与间距自动设置；Excel「仅数据」沿用目标格式，不设置字体。接收设备未安装的字体可能被替换。
 3. 复制表格，或下载可编辑的 Office 文件。
 
 ![表格工坊输入与预览界面，内容为虚构办公用品数据](docs/screenshots/overview.jpg)
